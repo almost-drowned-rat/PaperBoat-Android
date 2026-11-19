@@ -7,6 +7,12 @@ project(Paperboat
     DESCRIPTION "PM64"
 )
 
+# Android: build paths in the binaries (__FILE__ in asserts / logs, debug info) start with ~ instead of the build
+# machine's home folder, so the APK names no user.
+if(ANDROID AND DEFINED ENV{HOME})
+    add_compile_options("-ffile-prefix-map=$ENV{HOME}=~")
+endif()
+
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_EXTENSIONS ON)  # Enable GNU extensions (gnu99)
 set(CMAKE_CXX_STANDARD 20)
