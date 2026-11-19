@@ -54,7 +54,7 @@ class MainActivity : SDLActivity() {
 
     /** With a shader chosen, SDL draws into the shader presenter's buffer (ShaderSurface) instead of the screen. */
     override fun createSDLSurface(context: Context): SDLSurface =
-        if (ShaderLibrary.wanted(context)) ShaderSurface(context) else super.createSDLSurface(context)
+        if (ShaderHost.wanted(context)) ShaderSurface(context) else super.createSDLSurface(context)
 
     @Deprecated("Activity result API of the platform")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -73,7 +73,7 @@ class MainActivity : SDLActivity() {
                 override fun menuOpen() = runCatching { isMenuOpen() }.getOrDefault(false)
                 override fun openGameMenu() = toggleGameMenu()
             })
-        touch?.let { t -> shaders = ShaderLibrary(this, t).also { t.setShaderMenu(it) } }
+        touch?.let { t -> shaders = ShaderLibrary(this, t, ShaderHost.TARGET).also { t.setShaderMenu(it) } }
         // Back opens the menu (TouchControls) or, with the engine's menu open, closes that. From Android 13 the
         // back gesture arrives only through this callback (from Android 16, with targetSdk 36, never as a key).
         if (Build.VERSION.SDK_INT >= 33) {
