@@ -1,0 +1,37 @@
+{
+  "$schema": "https://recomp.fyi/schema/v1.json",
+  "game": "Paper Mario",
+  "wikidata": "Q149998",
+  "system": "N64",
+  "type": [
+    "decomp",
+    "port"
+  ],
+  "project": "PaperBoat - Android",
+  "status": "released",
+  "targets": [
+    "Android"
+  ],
+  "original": {
+    "region": "USA",
+    "sha1": "3837f44cda784b466c9a2d99df70d77c322b97a0"
+  },
+  "toolchain": "libultraship",
+  "maintainers": [
+    {
+      "name": "almost-drowned-rat",
+      "link": "https://github.com/almost-drowned-rat"
+    }
+  ],
+  "links": [
+    {
+      "label": "PaperBoat (main project)",
+      "url": "https://github.com/HarbourMasters/PaperBoat"
+    },
+    {
+      "label": "Paper Mario DX decompilation",
+      "url": "https://github.com/bates64/papermario-dx"
+    }
+  ],
+  "notes": "Android version of PaperBoat, a fork of it (branch android). Made with AI assistance."
+}
