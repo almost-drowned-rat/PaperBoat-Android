@@ -150,7 +150,7 @@ android {
         minSdk = 24
         targetSdk = 36
         versionCode = 1
-        versionName = projectVersion
+        versionName = "$projectVersion-android1"   // the game version + this port's release on it
 
         ndk {
             // 64-bit only; a second ABI roughly doubles an already long
