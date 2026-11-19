@@ -32,7 +32,11 @@
     <!-- No storage permissions: the ROM comes through the document picker, and
          everything else lives in the app's own external files directory. -->
 
+    <!-- allowNativeHeapPointerTagging off: Android 11+ tags arm64 heap pointers in their top byte, and the engine
+         carries some pointers through 32-bit or masked values, which loses the tag - garbled textures and text
+         (Odin 2 Portal, Android 13). -->
     <application
+        android:allowNativeHeapPointerTagging="false"
         android:allowBackup="false"
         android:appCategory="game"
         android:hardwareAccelerated="true"

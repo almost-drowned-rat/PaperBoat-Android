@@ -1,8 +1,9 @@
 /**
  * JNI surface for the Android app: menu state, ROM recognition, and extraction.
  *
- * On-screen controls are not here — the engine draws its own, in
- * src/port/ui/TouchControls.cpp.
+ * The Android version's touch buttons (TouchOverlay.java, TouchControls.java) are fed into SDL here as one virtual
+ * game controller, so they go through libultraship's normal mapping and can be remapped like any pad (every pad is
+ * on port 1). The engine's own ImGui touch controls (src/port/ui/TouchControls.cpp) start off on Android.
  *
  * The two extraction entry points take their paths as arguments rather than
  * asking Ship::Context: the launcher calls them before SDL exists.
@@ -11,6 +12,7 @@
 
 #include <jni.h>
 #include <android/log.h>
+#include <SDL2/SDL.h>
 
 #include <atomic>
 #include <exception>
@@ -40,9 +42,73 @@ std::string ToStdString(JNIEnv* env, jstring value) {
     return result;
 }
 
+// The touch buttons as an ordinary SDL game controller. A virtual GAMECONTROLLER joystick gets SDL's default
+// mapping: button i = SDL_GameControllerButton i, axis i = SDL_GameControllerAxis i.
+SDL_Joystick* gTouchJoystick = nullptr;
+
+void AttachTouchJoystick() {
+    if (gTouchJoystick != nullptr || !SDL_WasInit(SDL_INIT_JOYSTICK)) {
+        return;
+    }
+    const int index = SDL_JoystickAttachVirtual(SDL_JOYSTICK_TYPE_GAMECONTROLLER, SDL_CONTROLLER_AXIS_MAX,
+                                                SDL_CONTROLLER_BUTTON_MAX, 0);
+    if (index < 0) {
+        __android_log_print(ANDROID_LOG_ERROR, kLogTag, "Could not attach the touch buttons: %s", SDL_GetError());
+        return;
+    }
+    gTouchJoystick = SDL_JoystickOpen(index);
+    if (gTouchJoystick == nullptr) {
+        __android_log_print(ANDROID_LOG_ERROR, kLogTag, "Could not open the touch buttons: %s", SDL_GetError());
+        SDL_JoystickDetachVirtual(index);
+        return;
+    }
+    // a trigger at rest is the axis minimum (raw 0 would read as half pressed)
+    SDL_JoystickSetVirtualAxis(gTouchJoystick, SDL_CONTROLLER_AXIS_TRIGGERLEFT, SDL_JOYSTICK_AXIS_MIN);
+    SDL_JoystickSetVirtualAxis(gTouchJoystick, SDL_CONTROLLER_AXIS_TRIGGERRIGHT, SDL_JOYSTICK_AXIS_MIN);
+    __android_log_print(ANDROID_LOG_INFO, kLogTag, "Touch buttons attached as a virtual controller");
+}
+
 } // namespace
 
 extern "C" {
+
+/**
+ * The touch buttons' state (TouchOverlay bits: 0 A, 1 B, 2 Z, 3 L, 4 R, 5 START, 6-9 C up/down/left/right,
+ * 10-13 D-pad up/down/left/right; the stick in -1..1, y down = +), sent the way libultraship's default N64 mapping
+ * reads a pad: A = A, B = B, Z = left trigger, L = left shoulder, R = right trigger, START = Start, the C buttons =
+ * the right stick, the D-pad = the D-pad.
+ */
+JNIEXPORT void JNICALL Java_dev_net64_paperboat_TouchNative_nativeTouchPad(JNIEnv*, jclass, jint bits, jfloat x, jfloat y) {
+    AttachTouchJoystick();
+    if (gTouchJoystick == nullptr) {
+        return;
+    }
+    auto on = [bits](int bit) { return (bits >> bit) & 1; };
+    SDL_JoystickSetVirtualButton(gTouchJoystick, SDL_CONTROLLER_BUTTON_A, on(0));
+    SDL_JoystickSetVirtualButton(gTouchJoystick, SDL_CONTROLLER_BUTTON_B, on(1));
+    SDL_JoystickSetVirtualButton(gTouchJoystick, SDL_CONTROLLER_BUTTON_LEFTSHOULDER, on(3));
+    SDL_JoystickSetVirtualButton(gTouchJoystick, SDL_CONTROLLER_BUTTON_START, on(5));
+    SDL_JoystickSetVirtualButton(gTouchJoystick, SDL_CONTROLLER_BUTTON_DPAD_UP, on(10));
+    SDL_JoystickSetVirtualButton(gTouchJoystick, SDL_CONTROLLER_BUTTON_DPAD_DOWN, on(11));
+    SDL_JoystickSetVirtualButton(gTouchJoystick, SDL_CONTROLLER_BUTTON_DPAD_LEFT, on(12));
+    SDL_JoystickSetVirtualButton(gTouchJoystick, SDL_CONTROLLER_BUTTON_DPAD_RIGHT, on(13));
+    SDL_JoystickSetVirtualAxis(gTouchJoystick, SDL_CONTROLLER_AXIS_TRIGGERLEFT,
+                               on(2) ? SDL_JOYSTICK_AXIS_MAX : SDL_JOYSTICK_AXIS_MIN);
+    SDL_JoystickSetVirtualAxis(gTouchJoystick, SDL_CONTROLLER_AXIS_TRIGGERRIGHT,
+                               on(4) ? SDL_JOYSTICK_AXIS_MAX : SDL_JOYSTICK_AXIS_MIN);
+    const int cy = on(6) ? SDL_JOYSTICK_AXIS_MIN : (on(7) ? SDL_JOYSTICK_AXIS_MAX : 0);
+    const int cx = on(8) ? SDL_JOYSTICK_AXIS_MIN : (on(9) ? SDL_JOYSTICK_AXIS_MAX : 0);
+    SDL_JoystickSetVirtualAxis(gTouchJoystick, SDL_CONTROLLER_AXIS_RIGHTX, static_cast<Sint16>(cx));
+    SDL_JoystickSetVirtualAxis(gTouchJoystick, SDL_CONTROLLER_AXIS_RIGHTY, static_cast<Sint16>(cy));
+    SDL_JoystickSetVirtualAxis(gTouchJoystick, SDL_CONTROLLER_AXIS_LEFTX, static_cast<Sint16>(x * SDL_JOYSTICK_AXIS_MAX));
+    SDL_JoystickSetVirtualAxis(gTouchJoystick, SDL_CONTROLLER_AXIS_LEFTY, static_cast<Sint16>(y * SDL_JOYSTICK_AXIS_MAX));
+}
+
+/** The game runs (libultraship's window exists): the touch buttons may show. */
+JNIEXPORT jboolean JNICALL Java_dev_net64_paperboat_TouchNative_nativeGameRunning(JNIEnv*, jclass) {
+    auto context = Ship::Context::GetRawInstance();
+    return (context != nullptr && context->GetWindow() != nullptr) ? JNI_TRUE : JNI_FALSE;
+}
 
 /**
  * Whether libultraship's menu is up. A keyboard, a gamepad or the menu itself

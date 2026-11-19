@@ -14,7 +14,7 @@ import java.util.zip.ZipInputStream
  * `SDL_AndroidGetExternalStoragePath()` — `getExternalFilesDir(null)`, which a
  * file manager can also reach, so mods can be dropped in. Everything lives there:
  *
- *     Android/data/dev.net64.paperboat/files/
+ *     Android/data/io.github.almostdrownedrat.paperboat/files/
  *       baserom.us.z64       the user's ROM, copied in by the launcher
  *       config.yml, assets/  Torch's extraction recipes, unpacked from the APK
  *       paperboat.o2r        engine assets, built from port/ into the APK

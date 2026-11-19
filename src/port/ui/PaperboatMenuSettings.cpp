@@ -281,6 +281,8 @@ void PaperboatMenu::AddMenuSettings() {
         .HideInSearch(true)
         .Options(WindowButtonOptions().Tooltip("Enables the separate Bindings Window."));
 
+#ifndef __ANDROID__
+    // Android: the app's own touch buttons (the controller icon at the top centre) replace these.
     AddWidget(path, "Touch Controls", WIDGET_SEPARATOR_TEXT);
     AddWidget(path, "Enable Touch Controls", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_TOUCH("Enabled"))
@@ -320,6 +322,7 @@ void PaperboatMenu::AddMenuSettings() {
             CVarSetInteger(CVAR_TOUCH("EditMode"), 1);
             Ship::Context::GetRawInstance()->GetWindow()->GetGui()->GetMenu()->Hide();
         });
+#endif
 
     path.column = SECTION_COLUMN_2;
     AddWidget(path, "Additional Control Settings", WIDGET_SEPARATOR_TEXT);

@@ -146,7 +146,7 @@ android {
     ndkVersion = "30.0.15729638"
 
     defaultConfig {
-        applicationId = "dev.net64.paperboat"
+        applicationId = "io.github.almostdrownedrat.paperboat"
         minSdk = 24
         targetSdk = 36
         versionCode = 1

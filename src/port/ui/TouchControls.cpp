@@ -16,7 +16,9 @@
 #include <cstdio>
 #include <vector>
 
-#if defined(PLATFORM_IOS) || defined(__IOS__) || defined(__ANDROID__)
+// Android: the app's own touch buttons (android/: TouchOverlay / TouchControls, the same in every Android port of
+// this fork) are used instead, so these start off there and their settings are not shown.
+#if defined(PLATFORM_IOS) || defined(__IOS__)
 #define TOUCH_CONTROLS_DEFAULT 1
 #else
 #define TOUCH_CONTROLS_DEFAULT 0

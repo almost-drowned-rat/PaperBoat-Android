@@ -1,4 +1,18 @@
 # PaperBoat
+
+> **Android version (this fork, branch `android`).** Made for Android handhelds with a built-in controller and
+> phones alike; tested on the AYN Odin 2 Portal. On top of upstream's Android build:
+> - App ID `io.github.almostdrownedrat.paperboat` ("PaperBoat"), installs next to other builds.
+> - **Touch buttons** like this fork's other Android ports (N64 layout; the controller icon at the top centre opens
+>   their settings: Automatic / Always / Off - Automatic hides them while a controller is used -, move and resize,
+>   size, show / hide single buttons, opacity, reset), sent to the game as a controller. The engine's own touch
+>   controls start off on Android.
+> - Android's **Back** opens and closes the menu.
+> - Native heap pointer tagging is off: Android 11+ tagged pointers garbled textures and text on arm64.
+>
+> The Android changes were made with AI assistance ([Claude Code](https://claude.com/claude-code)); planning, testing
+> on the device and the decision what gets released are by the fork's owner.
+
 *Harbour Masters port of Paper Mario 64*
 
 Developers:

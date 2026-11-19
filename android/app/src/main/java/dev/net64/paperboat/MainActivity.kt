@@ -6,6 +6,8 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
+import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.Button
@@ -16,9 +18,9 @@ import androidx.core.view.WindowInsetsControllerCompat
 import org.libsdl.app.SDLActivity
 
 /**
- * The game. The on-screen controller is the engine's own, drawn inside the GL
- * surface (src/port/ui/TouchControls.cpp); the only thing layered over SDL is a
- * Mods button, shown while the engine's menu is up.
+ * The game. Over SDL's surface: the touch buttons (TouchControls / TouchOverlay, as in this fork's other Android
+ * ports; Automatic hides them while a controller is used, the icon at the top centre opens their settings) and a
+ * Mods button, shown while the engine's menu is up. Android's Back opens and closes the engine's menu.
  *
  * [LauncherActivity] guarantees pm64.o2r exists before this activity starts.
  */
@@ -27,6 +29,8 @@ class MainActivity : SDLActivity() {
     private lateinit var modsButton: Button
 
     private var menuOpen = false
+
+    private var touch: TouchControls? = null
 
     private val handler = Handler(Looper.getMainLooper())
     private val menuWatcher = object : Runnable {
@@ -47,7 +51,41 @@ class MainActivity : SDLActivity() {
         super.onCreate(savedInstanceState)
         goFullscreen()
         addModsButton()
+        touch = TouchControls(this, findViewById(android.R.id.content),
+            TouchOverlay.Sink { b, x, y -> TouchNative.nativeTouchPad(b, x, y) },
+            object : TouchControls.GameState {
+                override fun running() = TouchNative.nativeGameRunning()
+                override fun menuOpen() = menuOpen
+            })
+        // Back toggles the engine's menu. From Android 13 the back gesture arrives only through this callback (from
+        // Android 16, with targetSdk 36, never as a key).
+        if (Build.VERSION.SDK_INT >= 33) {
+            onBackInvokedDispatcher.registerOnBackInvokedCallback(
+                android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT) { onBackMenu() }
+        }
     }
+
+    /** Back: closes the touch settings first, otherwise toggles the engine's menu (it opens and closes on Escape). */
+    private fun onBackMenu() {
+        val t = touch
+        if (t != null && t.onKey(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_BACK))) return
+        onNativeKeyDown(KeyEvent.KEYCODE_ESCAPE)
+        onNativeKeyUp(KeyEvent.KEYCODE_ESCAPE)
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.keyCode == KeyEvent.KEYCODE_BACK) {
+            if (event.action == KeyEvent.ACTION_UP) onBackMenu()
+            return true
+        }
+        return touch?.onKey(event) == true || super.dispatchKeyEvent(event)
+    }
+
+    override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean =
+        touch?.onMotion(event) == true || super.dispatchGenericMotionEvent(event)
+
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean =
+        touch?.onTouch(event) == true || super.dispatchTouchEvent(event)
 
     /**
      * Edge to edge, bars hidden. From API 35 the old fullscreen window flags are
@@ -84,15 +122,18 @@ class MainActivity : SDLActivity() {
         syncMenuState()
         handler.removeCallbacks(menuWatcher)
         handler.postDelayed(menuWatcher, MENU_POLL_MS)
+        touch?.onResume()
     }
 
     override fun onPause() {
         handler.removeCallbacks(menuWatcher)
+        touch?.onPause()
         super.onPause()
     }
 
     override fun onDestroy() {
         handler.removeCallbacks(menuWatcher)
+        touch?.destroy()
         super.onDestroy()
     }
 
