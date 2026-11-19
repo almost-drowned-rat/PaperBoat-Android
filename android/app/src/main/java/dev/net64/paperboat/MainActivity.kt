@@ -55,30 +55,36 @@ class MainActivity : SDLActivity() {
             TouchOverlay.Sink { b, x, y -> TouchNative.nativeTouchPad(b, x, y) },
             object : TouchControls.GameState {
                 override fun running() = TouchNative.nativeGameRunning()
-                override fun menuOpen() = menuOpen
+                override fun menuOpen() = runCatching { isMenuOpen() }.getOrDefault(false)
+                override fun openGameMenu() = toggleGameMenu()
             })
-        // Back toggles the engine's menu. From Android 13 the back gesture arrives only through this callback (from
-        // Android 16, with targetSdk 36, never as a key).
+        // Back opens the menu (TouchControls) or, with the engine's menu open, closes that. From Android 13 the
+        // back gesture arrives only through this callback (from Android 16, with targetSdk 36, never as a key).
         if (Build.VERSION.SDK_INT >= 33) {
             onBackInvokedDispatcher.registerOnBackInvokedCallback(
                 android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT) { onBackMenu() }
         }
     }
 
-    /** Back: closes the touch settings first, otherwise toggles the engine's menu (it opens and closes on Escape). */
-    private fun onBackMenu() {
-        val t = touch
-        if (t != null && t.onKey(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_BACK))) return
+    /** The engine's menu opens and closes on Escape. */
+    private fun toggleGameMenu() {
         onNativeKeyDown(KeyEvent.KEYCODE_ESCAPE)
         onNativeKeyUp(KeyEvent.KEYCODE_ESCAPE)
     }
 
+    /** Back: the menu (TouchControls) takes it while the game runs; with the engine's menu open it closes that. */
+    private fun onBackMenu() {
+        if (touch?.onBack() == true) return
+        if (runCatching { isMenuOpen() }.getOrDefault(false)) toggleGameMenu()
+    }
+
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (touch?.onKey(event) == true) return true
         if (event.keyCode == KeyEvent.KEYCODE_BACK) {
-            if (event.action == KeyEvent.ACTION_UP) onBackMenu()
+            if (event.action == KeyEvent.ACTION_UP && runCatching { isMenuOpen() }.getOrDefault(false)) toggleGameMenu()
             return true
         }
-        return touch?.onKey(event) == true || super.dispatchKeyEvent(event)
+        return super.dispatchKeyEvent(event)
     }
 
     override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean =

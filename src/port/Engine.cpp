@@ -204,6 +204,11 @@ GameEngine::GameEngine() {
     this->context->InitLogging();
     this->context->InitConfiguration();
     this->context->InitConsoleVariables();
+#ifdef __ANDROID__
+    // Android version: the pad navigates the menu unless the player turned it off (the game then also gets no pad
+    // input while the menu is open). A handheld has no mouse, and touch alone isn't enough there.
+    this->context->GetConsoleVariables()->RegisterInteger(CVAR_IMGUI_CONTROLLER_NAV, 1);
+#endif
 
     this->context->InitControlDeck(std::make_shared<LUS::ControlDeck>());
     this->context->InitResourceManager(
