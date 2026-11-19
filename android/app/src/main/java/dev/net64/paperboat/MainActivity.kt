@@ -69,6 +69,7 @@ class MainActivity : SDLActivity() {
         touch = TouchControls(this, findViewById(android.R.id.content),
             TouchOverlay.Sink { b, x, y -> TouchNative.nativeTouchPad(b, x, y) },
             object : TouchControls.GameState {
+                override fun frameStats(): FloatArray? = runCatching { TouchNative.nativeFrameStats() }.getOrNull()
                 override fun running() = TouchNative.nativeGameRunning()
                 override fun menuOpen() = runCatching { isMenuOpen() }.getOrDefault(false)
                 override fun openGameMenu() = toggleGameMenu()
