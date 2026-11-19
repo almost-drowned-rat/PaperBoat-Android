@@ -11,6 +11,12 @@
 >   controller: Back to the game, Game settings and controller (the engine's menu), Touch controls. With the
 >   engine's menu open, Back closes it. The engine's menu is navigated with the controller by default on Android.
 > - Native heap pointer tagging is off: Android 11+ tagged pointers garbled textures and text on arm64.
+> - RetroArch shaders (librashader, Vulkan; 64-bit Android 10+): none are shipped. In the menu Back opens, Shader >
+>   Import shader pack (.zip) takes a slang shader pack such as libretro/slang-shaders' "Download ZIP"; it is unpacked
+>   into the app's folder (Android/data/<app>/files/shaders) and its presets (.slangp) can then be picked by folder.
+>   While a shader is in use the game draws into a buffer that is drawn through the shader onto the screen
+>   (src/port/android/ShaderHost.cpp); switching between shaders applies at once, from Off to a shader at the next
+>   start. librashader (MIT / MPL-2.0 / GPL-3.0) is loaded at run time; its C header is src/port/android/librashader.h.
 >
 > The Android changes were made with AI assistance ([Claude Code](https://claude.com/claude-code)); planning, testing
 > on the device and the decision what gets released are by the fork's owner.

@@ -766,3 +766,8 @@ if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
 endif()
 
 message(STATUS "Configuring ${PROJECT_NAME} v${PROJECT_VERSION}")
+
+# Android: the shader presenter (src/port/android/ShaderHost.cpp) draws the game through librashader with Vulkan.
+if(ANDROID)
+    target_link_libraries(${PROJECT_NAME} PRIVATE vulkan)
+endif()

@@ -109,3 +109,6 @@ CMakeSettings.json
 CMakeUserPresets.json
 *.exe
 /.vs
+
+# librashader, copied in by the local build (tools/build_*.sh)
+android/app/src/main/jniLibs/
