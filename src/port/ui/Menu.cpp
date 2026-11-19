@@ -1,3 +1,4 @@
+#include "MenuPad.h"
 #include "Menu.h"
 #include <libultraship/bridge/windowbridge.h>
 #include <libultraship/bridge/controllerbridge.h>
@@ -216,11 +217,13 @@ static constexpr bool kRecompLook = true;
 #else
 static constexpr bool kRecompLook = false;
 #endif
+// Child windows join their parent's gamepad navigation (no frame around the focused child, see MenuPad).
+constexpr ImGuiChildFlags kMenuChildNav = ImGuiChildFlags_NavFlattened;
 static const ImVec4 kRecompAccent = ImVec4(0.91f, 0.69f, 0.29f, 1.0f);
 static const ImVec4 kRecompPanel = ImVec4(0.06f, 0.07f, 0.09f, 0.96f);
 static const ImVec4 kRecompLine = ImVec4(1.0f, 1.0f, 1.0f, 0.14f);
 
-static bool RecompTab(const std::string& label, bool selected, const char* idSuffix) {
+static bool RecompTab(const std::string& label, bool selected, const char* idSuffix, bool underline = true) {
     ImGuiContext& g = *GImGui;
     ImGuiWindow* window = g.CurrentWindow;
     ImGuiStyle& style = ImGui::GetStyle();
@@ -244,7 +247,7 @@ static bool RecompTab(const std::string& label, bool selected, const char* idSuf
     ImGui::PushStyleColor(ImGuiCol_Text, selected ? kRecompAccent : hovered ? ImVec4(1, 1, 1, 1) : ImVec4(1, 1, 1, 0.6f));
     UIWidgets::RenderText(pos + style.FramePadding, label.c_str(), end, true);
     ImGui::PopStyleColor();
-    if (selected) {
+    if (selected && underline) {
         window->DrawList->AddRectFilled(ImVec2(bb.Min.x + style.FramePadding.x, bb.Max.y - 4),
                                         ImVec2(bb.Max.x - style.FramePadding.x, bb.Max.y - 1),
                                         ImGui::GetColorU32(kRecompAccent), 1.5f);
@@ -252,6 +255,25 @@ static bool RecompTab(const std::string& label, bool selected, const char* idSuf
     ImGui::RenderNavCursor(bb, id);
     return pressed;
 }
+
+// The right stick scrolls the window this is called in (the menu's content).
+static void RecompStickScroll() {
+    if (!kRecompLook) {
+        return;
+    }
+    float v = ImGui::GetKeyData(ImGuiKey_GamepadRStickDown)->AnalogValue -
+              ImGui::GetKeyData(ImGuiKey_GamepadRStickUp)->AnalogValue;
+    if (fabsf(v) < 0.2f) {
+        return;
+    }
+    float a = (fabsf(v) - 0.2f) / 0.8f;
+    ImGui::SetScrollY(ImGui::GetScrollY() + (v < 0 ? -1.0f : 1.0f) * a * a * 1600.0f * ImGui::GetIO().DeltaTime);
+}
+
+#ifdef __ANDROID__
+// The Mods tab: the app's mods and saves manager (MainActivity, through src/port/android/AndroidBridge.cpp).
+void Android_OpenModsManager();
+#endif
 
 static void RecompLine(ImDrawList* list, ImVec2 from, float width) {
     list->AddRectFilled(from, from + ImVec2(width, 1.0f), ImGui::GetColorU32(kRecompLine));
@@ -646,7 +668,12 @@ void Menu::MenuDrawItem(WidgetInfo& widget, uint32_t width, UIWidgets::Colors me
 
 void Menu::Draw() {
     if (!IsVisible()) {
+        wasVisible = false;
         return;
+    }
+    if (!wasVisible) {
+        wasVisible = true;
+        navInitPending = true;
     }
     DrawElement();
     // Sync up the IsVisible flag if it was changed by ImGui
@@ -749,13 +776,30 @@ void Menu::DrawElement() {
         headerIndex = menuOrder.at(0);
         CVarSetString(headerCvar, headerIndex.c_str());
     }
+    // Controller (MenuPad): ZL / ZR switch the area, L / R its section (further down).
+    MenuPad::ClaimMenuButtons();
+    const int headerStep = MenuPad::Pressed(ImGuiKey_GamepadR2) - MenuPad::Pressed(ImGuiKey_GamepadL2);
+    if (headerStep != 0 && !menuOrder.empty()) {
+        const int count = static_cast<int>(menuOrder.size());
+        const int current = static_cast<int>(std::find(menuOrder.begin(), menuOrder.end(), headerIndex) - menuOrder.begin());
+        headerIndex = menuOrder.at((std::min(current, count - 1) + headerStep + count) % count);
+        CVarSetString(headerCvar, headerIndex.c_str());
+        CVarSave();
+        navInitPending = true;
+    }
     ImVec2 pos = window->DC.CursorPos;
     float centerX = pos.x + windowWidth / 2 - (style.ItemSpacing.x * (menuEntries.size() + 1));
     std::vector<ImVec2> headerSizes;
     float headerWidth = style.ItemSpacing.x + 20;
     bool headerSearch = !CVarGetInteger(CVAR_SETTING("Menu.SidebarSearch"), 0);
-    if (headerSearch) {
+    if (headerSearch && !kRecompLook) {
         headerWidth += 200.0f + style.ItemSpacing.x + style.FramePadding.x;
+    }
+    if (kRecompLook && menuEntries.contains(headerIndex)) {
+        for (auto& sidebarLabel : menuEntries.at(headerIndex).sidebarOrder) {
+            headerWidth += ImGui::CalcTextSize(sidebarLabel.c_str()).x + style.FramePadding.x * 2 + style.ItemSpacing.x;
+        }
+        headerWidth += ImGui::CalcTextSize("Mods").x + style.FramePadding.x * 2 + style.ItemSpacing.x * 5;
     }
     for (auto& label : menuOrder) {
         ImVec2 size = ImGui::CalcTextSize(label.c_str());
@@ -787,7 +831,7 @@ void Menu::DrawElement() {
     }
     ImGui::BeginChild(
         "Menu Block", menuSize,
-        ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysAutoResize
+        ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysAutoResize | kMenuChildNav
             | (kRecompLook ? ImGuiChildFlags_Borders : 0),
         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar
     );
@@ -812,7 +856,7 @@ void Menu::DrawElement() {
     bool autoFocus = CVarGetInteger(CVAR_SETTING("Menu.SearchAutofocus"), 0);
     ImGui::BeginChild(
         "Header Selection", headerSelSize,
-        ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysAutoResize,
+        ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysAutoResize | kMenuChildNav,
         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_HorizontalScrollbar
     );
     uint8_t curIndex = 0;
@@ -826,7 +870,7 @@ void Menu::DrawElement() {
         if (headerIndex != label) {
             ImGui::PushStyleColor(ImGuiCol_Button, { 0, 0, 0, 0 });
         }
-        if (kRecompLook ? RecompTab(entry.label, headerIndex == label, "##Header") : ModernMenuHeaderEntry(entry.label)) {
+        if (kRecompLook ? RecompTab(entry.label, headerIndex == label, "##Header", false) : ModernMenuHeaderEntry(entry.label)) {
             if (headerSearch) {
                 menuSearch.Clear();
             }
@@ -841,13 +885,43 @@ void Menu::DrawElement() {
         if (headerIndex == label) {
             sidebar = &entry.sidebars;
         }
+        if (kRecompLook && headerIndex == label) {
+            // one row: the active area's sections follow its name
+            const char* entrySidebarCvar = entry.sidebarCvar;
+            std::string activeSection = CVarGetString(entrySidebarCvar, "");
+            if (!entry.sidebars.contains(activeSection)) {
+                activeSection = entry.sidebarOrder.at(0);
+            }
+            for (auto& sidebarLabel : entry.sidebarOrder) {
+                ImGui::SameLine();
+                if (RecompTab(sidebarLabel, activeSection == sidebarLabel, "##Sidebar")) {
+                    if (headerSearch) {
+                        menuSearch.Clear();
+                    }
+                    CVarSetString(entrySidebarCvar, sidebarLabel.c_str());
+                    CVarSave();
+                    activeSection = sidebarLabel;
+                    navInitPending = true;
+                }
+            }
+            ImGui::SameLine(0, style.ItemSpacing.x * 4);
+            ImGui::Dummy({ 0, 0 });
+        }
         if (nextIndex != label) {
             headerIndex = nextIndex;
         }
         curIndex++;
     }
+#ifdef __ANDROID__
+    if (kRecompLook) {
+        ImGui::SameLine();
+        if (RecompTab("Mods", false, "##Mods")) {
+            Android_OpenModsManager();
+        }
+    }
+#endif
     std::string menuSearchText = "";
-    if (headerSearch) {
+    if (headerSearch && !kRecompLook) {
         ImGui::SameLine();
         if (autoFocus && freshOpen) {
             ImGui::SetKeyboardFocusHere();
@@ -946,36 +1020,24 @@ void Menu::DrawElement() {
     if (!sidebar->contains(sectionIndex)) {
         sectionIndex = menuEntries.at(headerIndex).sidebarOrder.at(0);
     }
+    {
+        const int sectionStep = MenuPad::Pressed(ImGuiKey_GamepadR1) - MenuPad::Pressed(ImGuiKey_GamepadL1);
+        auto& order = menuEntries.at(headerIndex).sidebarOrder;
+        if (sectionStep != 0 && !order.empty()) {
+            const int count = static_cast<int>(order.size());
+            const int current = static_cast<int>(std::find(order.begin(), order.end(), sectionIndex) - order.begin());
+            sectionIndex = order.at((std::min(current, count - 1) + sectionStep + count) % count);
+            CVarSetString(sidebarCvar, sectionIndex.c_str());
+            CVarSave();
+            navInitPending = true;
+        }
+    }
     float sectionHeight, columnHeight, sidebarWidth = 0.0f;
     if (kRecompLook) {
-        // the sections as a second row of tabs, under a thin line
-        RecompLine(window->DrawList, pos, menuSize.x);
-        pos.y += style.ItemSpacing.y;
-        float tabsHeight = ImGui::GetFontSize() + style.FramePadding.y * 2 + style.ScrollbarSize;
-        ImGui::SetNextWindowPos(pos + ImVec2(style.ItemSpacing.x * 2, 0));
-        ImGui::BeginChild((menuEntries.at(headerIndex).label + " Sections").c_str(),
-                          { menuSize.x - style.ItemSpacing.x * 4, tabsHeight }, 0,
-                          ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_HorizontalScrollbar);
-        bool first = true;
-        for (auto& sidebarLabel : menuEntries.at(headerIndex).sidebarOrder) {
-            if (!first) {
-                ImGui::SameLine();
-            }
-            first = false;
-            if (RecompTab(sidebarLabel, sectionIndex == sidebarLabel, "##Sidebar")) {
-                if (headerSearch) {
-                    menuSearch.Clear();
-                }
-                CVarSetString(sidebarCvar, sidebarLabel.c_str());
-                CVarSave();
-                sectionIndex = sidebarLabel;
-            }
-        }
-        ImGui::EndChild();
+        // the sections are in the tab row above
         ImGui::PopFont();
-        pos.y += tabsHeight;
         RecompLine(window->DrawList, pos, menuSize.x);
-        pos.y += style.ItemSpacing.y;
+        pos.y += style.ItemSpacing.y * 2;
         sectionHeight = menuSize.y - (pos.y - window->WorkRect.Min.y) + (window->WorkRect.GetSize().y - menuSize.y) / 2;
         columnHeight = sectionHeight - style.ItemSpacing.y * 4;
         pos.x += style.ItemSpacing.x;
@@ -1052,9 +1114,10 @@ void Menu::DrawElement() {
         ImGui::SameLine();
         ImGui::SetNextWindowSizeConstraints({ sectionWidth, 0 }, { sectionWidth, columnHeight });
         ImGui::BeginChild(
-            sectionMenuId.c_str(), { sectionWidth, windowHeight * 4 }, ImGuiChildFlags_AutoResizeY,
+            sectionMenuId.c_str(), { sectionWidth, windowHeight * 4 }, ImGuiChildFlags_AutoResizeY | kMenuChildNav,
             ImGuiWindowFlags_NoTitleBar
         );
+        RecompStickScroll();
     }
     if (headerSearch && menuSearchText.length() > 0) {
         ImGui::AlignTextToFramePadding();
@@ -1093,9 +1156,25 @@ void Menu::DrawElement() {
             if (useColumns) {
                 ImGui::SetNextWindowSizeConstraints({ columnWidth, 0 }, { columnWidth, columnHeight });
                 ImGui::BeginChild(
-                    sectionId.c_str(), { columnWidth, windowHeight * 4 }, ImGuiChildFlags_AutoResizeY,
+                    sectionId.c_str(), { columnWidth, windowHeight * 4 }, ImGuiChildFlags_AutoResizeY | kMenuChildNav,
                     ImGuiWindowFlags_NoTitleBar
                 );
+                RecompStickScroll();
+            }
+            // On opening and after L / R / ZL / ZR / a tab the controller selection starts at the first entry.
+            if (i == 0 && navInitPending && MenuPad::Active()) {
+                navInitPending = false;
+                navShowFrames = 30;
+                ImGui::FocusWindow(ImGui::GetCurrentWindow());
+                ImGui::NavInitWindow(ImGui::GetCurrentWindow(), true);
+            }
+            if (i == 0 && navShowFrames > 0) {
+                navShowFrames--;
+                if (!ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+                    ImGui::SetNavCursorVisible(true);
+                } else {
+                    navShowFrames = 0;
+                }
             }
             // for (auto& entryName : sidebar->at(sectionIndex).sidebarOrder) {
             for (auto& entry : sidebar->at(sectionIndex).columnWidgets.at(i)) {
@@ -1125,6 +1204,7 @@ void Menu::DrawElement() {
     if (freshOpen) {
         freshOpen = false;
     }
+    MenuPad::DrawNavCursor();
     ImGui::End();
 }
 } // namespace Ship

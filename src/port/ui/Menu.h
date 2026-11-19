@@ -55,6 +55,9 @@ class Menu : public GuiWindow {
     };
 
   private:
+    bool wasVisible = false;
+    bool navInitPending = false; // put the controller selection on the first entry in the next draw
+    int navShowFrames = 0;       // frames left to keep the selection visible after it was placed
     bool allowPopout = true; // PortNote: should be set to false on small screen ports
     bool popped;
     ImVec2 poppedSize;
