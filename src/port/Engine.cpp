@@ -208,6 +208,8 @@ GameEngine::GameEngine() {
     // Android version: the pad navigates the menu unless the player turned it off (the game then also gets no pad
     // input while the menu is open). A handheld has no mouse, and touch alone isn't enough there.
     this->context->GetConsoleVariables()->RegisterInteger(CVAR_IMGUI_CONTROLLER_NAV, 1);
+    // ...and its widgets are grey by default, to go with the recomp-style menu panel (Menu.cpp).
+    this->context->GetConsoleVariables()->RegisterInteger(CVAR_SETTING("Menu.Theme"), UIWidgets::Colors::Gray);
 #endif
 
     this->context->InitControlDeck(std::make_shared<LUS::ControlDeck>());
