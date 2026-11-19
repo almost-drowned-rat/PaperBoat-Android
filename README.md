@@ -23,8 +23,8 @@ Updates install over the previous version and keep your saves. To get them autom
 [Obtainium](https://github.com/ImranR98/Obtainium) (`https://github.com/almost-drowned-rat/PaperBoat-Android`).
 
 Needs Android 7.0 or newer and a 64-bit (arm64) device; RetroArch shaders need Android 10 or newer and Vulkan.
-App ID `io.github.almostdrownedrat.paperboat` — it installs next to other PaperBoat builds. Versions are named after
-the game version and this port's release on it (`1.0.3-android1`).
+App ID `io.github.almostdrownedrat.paperboat` — it installs next to other PaperBoat builds. Release 0.1.0 is built on PaperBoat
+1.0.3.
 
 ## Controls
 
