@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/icon_256.png" alt="PaperBoat for Android" width="160">
+</p>
+
 # PaperBoat — Android
 
 The Android version of [PaperBoat](https://github.com/HarbourMasters/PaperBoat), Harbour Masters' Paper Mario 64
