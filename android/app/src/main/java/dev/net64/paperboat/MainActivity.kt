@@ -75,6 +75,8 @@ class MainActivity : SDLActivity() {
                 override fun openGameMenu() = toggleGameMenu()
             })
         touch?.let { t -> shaders = ShaderLibrary(this, t, ShaderHost.TARGET).also { t.setShaderMenu(it) } }
+        // Back opens the game's card menu (MenuCards.cpp); its Touch controls / Shaders / FPS come from TouchControls
+        touch?.setCardMenu(true)
         // Back opens the menu (TouchControls) or, with the engine's menu open, closes that. From Android 13 the
         // back gesture arrives only through this callback (from Android 16, with targetSdk 36, never as a key).
         if (Build.VERSION.SDK_INT >= 33) {
@@ -85,9 +87,12 @@ class MainActivity : SDLActivity() {
 
     /** The engine's menu opens and closes on Escape. */
     private fun toggleGameMenu() {
+        // the card menu open: Back goes up one level there (and closes it from the top, MenuCards.cpp)
+        if (runCatching { isMenuOpen() }.getOrDefault(false)) { runCatching { nativeMenuBack() }; return }
         onNativeKeyDown(KeyEvent.KEYCODE_ESCAPE)
         onNativeKeyUp(KeyEvent.KEYCODE_ESCAPE)
     }
+    private external fun nativeMenuBack()
 
     /** Back: the menu (TouchControls) takes it while the game runs; with the engine's menu open it closes that. */
     private fun onBackMenu() {

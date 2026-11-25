@@ -13,6 +13,18 @@
 #endif
 
 #define SCALE_IMGUI_SIZE(value) ((value / 13.0f) * ImGui::GetFontSize())
+// Android (handheld fork): a binding's parts (name, threshold, remove) as separate, finger-sized buttons with gaps.
+#ifdef __ANDROID__
+#define MAPPING_PART_GAP SCALE_IMGUI_SIZE(6.0f)
+#define MAPPING_ICON_PAD SCALE_IMGUI_SIZE(24.0f)
+#define MAPPING_GAP SCALE_IMGUI_SIZE(16.0f)
+#define MAPPING_ICON_ALIGN 0.5f
+#else
+#define MAPPING_PART_GAP 0
+#define MAPPING_ICON_PAD SCALE_IMGUI_SIZE(10.0f)
+#define MAPPING_GAP SCALE_IMGUI_SIZE(4.0f)
+#define MAPPING_ICON_ALIGN 1.0f
+#endif
 
 PaperboatInputEditorWindow::~PaperboatInputEditorWindow() {
 }
@@ -234,7 +246,7 @@ void PaperboatInputEditorWindow::DrawInputChip(const char* buttonName, ImVec4 co
 }
 
 void PaperboatInputEditorWindow::DrawButtonLineAddMappingButton(uint8_t port, N64ButtonMask bitmask) {
-    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(MAPPING_ICON_ALIGN, 0.5f));
     auto popupId = StringHelper::Sprintf("addButtonMappingPopup##%d-%d", port, bitmask);
     if (ImGui::Button(
             StringHelper::Sprintf("%s###addButtonMappingButton%d-%d", ICON_FA_PLUS, port, bitmask).c_str(),
@@ -336,7 +348,7 @@ void PaperboatInputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, N
     }
 
     ImGui::PopStyleVar();
-    ImGui::SameLine(0, 0);
+    ImGui::SameLine(0, MAPPING_PART_GAP);
 
     auto sdlAxisDirectionToButtonMapping = std::dynamic_pointer_cast<Ship::SDLAxisDirectionToButtonMapping>(mapping);
     if (sdlAxisDirectionToButtonMapping != nullptr) {
@@ -346,11 +358,11 @@ void PaperboatInputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, N
         GetButtonColorsForDeviceType(mapping->GetPhysicalDeviceType(), buttonColor, buttonHoveredColor);
         ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
-        ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+        ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(MAPPING_ICON_ALIGN, 0.5f));
         auto popupId = StringHelper::Sprintf("editAxisThresholdPopup##%s", id.c_str());
         if (ImGui::Button(
                 StringHelper::Sprintf("%s###editAxisThresholdButton%s", ICON_FA_COG, id.c_str()).c_str(),
-                ImVec2(ImGui::CalcTextSize(ICON_FA_COG).x + SCALE_IMGUI_SIZE(10.0f), 0.0f)
+                ImVec2(ImGui::CalcTextSize(ICON_FA_COG).x + MAPPING_ICON_PAD, 0.0f)
             ))
         {
             ImGui::OpenPopup(popupId.c_str());
@@ -464,15 +476,15 @@ void PaperboatInputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, N
         }
 
         ImGui::PopStyleVar();
-        ImGui::SameLine(0, 0);
+        ImGui::SameLine(0, MAPPING_PART_GAP);
     }
 
     ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
-    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(MAPPING_ICON_ALIGN, 0.5f));
     if (ImGui::Button(
             StringHelper::Sprintf("%s###removeButtonMappingButton%s", ICON_FA_TIMES, id.c_str()).c_str(),
-            ImVec2(ImGui::CalcTextSize(ICON_FA_TIMES).x + SCALE_IMGUI_SIZE(10.0f), 0.0f)
+            ImVec2(ImGui::CalcTextSize(ICON_FA_TIMES).x + MAPPING_ICON_PAD, 0.0f)
         ))
     {
         Ship::Context::GetRawInstance()
@@ -485,7 +497,7 @@ void PaperboatInputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, N
     ImGui::PopStyleColor();
     ImGui::PopStyleVar();
 
-    ImGui::SameLine(0, SCALE_IMGUI_SIZE(4.0f));
+    ImGui::SameLine(0, MAPPING_GAP);
 }
 
 void PaperboatInputEditorWindow::DrawButtonLine(
@@ -504,7 +516,7 @@ void PaperboatInputEditorWindow::DrawButtonLine(
 void PaperboatInputEditorWindow::DrawStickDirectionLineAddMappingButton(
     uint8_t port, uint8_t stick, Ship::Direction direction
 ) {
-    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(MAPPING_ICON_ALIGN, 0.5f));
     auto popupId = StringHelper::Sprintf("addStickDirectionMappingPopup##%d-%d-%d", port, stick, direction);
     if (ImGui::Button(
             StringHelper::Sprintf("%s###addStickDirectionMappingButton%d-%d-%d", ICON_FA_PLUS, port, stick, direction)
@@ -644,13 +656,13 @@ void PaperboatInputEditorWindow::DrawStickDirectionLineEditMappingButton(
     }
 
     ImGui::PopStyleVar();
-    ImGui::SameLine(0, 0);
+    ImGui::SameLine(0, MAPPING_PART_GAP);
     ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHoveredColor);
-    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(MAPPING_ICON_ALIGN, 0.5f));
     if (ImGui::Button(
             StringHelper::Sprintf("%s###removeStickDirectionMappingButton%s", ICON_FA_TIMES, id.c_str()).c_str(),
-            ImVec2(ImGui::CalcTextSize(ICON_FA_TIMES).x + SCALE_IMGUI_SIZE(10.0f), 0.0f)
+            ImVec2(ImGui::CalcTextSize(ICON_FA_TIMES).x + MAPPING_ICON_PAD, 0.0f)
         ))
     {
         if (stick == Ship::LEFT) {
@@ -670,7 +682,7 @@ void PaperboatInputEditorWindow::DrawStickDirectionLineEditMappingButton(
     ImGui::PopStyleColor();
     ImGui::PopStyleColor();
     ImGui::PopStyleVar();
-    ImGui::SameLine(0, SCALE_IMGUI_SIZE(4.0f));
+    ImGui::SameLine(0, MAPPING_GAP);
 }
 
 void PaperboatInputEditorWindow::DrawStickDirectionLine(
@@ -900,7 +912,7 @@ void PaperboatInputEditorWindow::UpdateStickDirectionToMappingIds(uint8_t port) 
 
 void PaperboatInputEditorWindow::DrawRemoveRumbleMappingButton(uint8_t port, std::string id) {
     ImGui::SameLine();
-    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(MAPPING_ICON_ALIGN, 0.5f));
     if (ImGui::Button(
             StringHelper::Sprintf("%s###removeRumbleMapping%s", ICON_FA_TIMES, id.c_str()).c_str(),
             ImVec2(SCALE_IMGUI_SIZE(20.0f), SCALE_IMGUI_SIZE(20.0f))
@@ -915,7 +927,7 @@ void PaperboatInputEditorWindow::DrawRemoveRumbleMappingButton(uint8_t port, std
 
 void PaperboatInputEditorWindow::DrawAddRumbleMappingButton(uint8_t port) {
     ImGui::SameLine();
-    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(MAPPING_ICON_ALIGN, 0.5f));
     auto popupId = StringHelper::Sprintf("addRumbleMappingPopup##%d", port);
     if (ImGui::Button(
             StringHelper::Sprintf("%s###addRumbleMapping%d", ICON_FA_PLUS, port).c_str(),
@@ -1107,7 +1119,7 @@ void PaperboatInputEditorWindow::DrawRumbleSection(uint8_t port) {
 
 void PaperboatInputEditorWindow::DrawRemoveLEDMappingButton(uint8_t port, std::string id) {
     ImGui::SameLine();
-    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(MAPPING_ICON_ALIGN, 0.5f));
     if (ImGui::Button(
             StringHelper::Sprintf("%s###removeLEDMapping%s", ICON_FA_TIMES, id.c_str()).c_str(),
             ImVec2(SCALE_IMGUI_SIZE(20.0f), SCALE_IMGUI_SIZE(20.0f))
@@ -1120,7 +1132,7 @@ void PaperboatInputEditorWindow::DrawRemoveLEDMappingButton(uint8_t port, std::s
 
 void PaperboatInputEditorWindow::DrawAddLEDMappingButton(uint8_t port) {
     ImGui::SameLine();
-    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(MAPPING_ICON_ALIGN, 0.5f));
     auto popupId = StringHelper::Sprintf("addLEDMappingPopup##%d", port);
     if (ImGui::Button(
             StringHelper::Sprintf("%s###addLEDMapping%d", ICON_FA_PLUS, port).c_str(),
@@ -1204,7 +1216,7 @@ void PaperboatInputEditorWindow::DrawLEDSection(uint8_t port) {
 
 void PaperboatInputEditorWindow::DrawRemoveGyroMappingButton(uint8_t port, std::string id) {
     ImGui::SameLine();
-    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(MAPPING_ICON_ALIGN, 0.5f));
     if (ImGui::Button(
             StringHelper::Sprintf("%s###removeGyroMapping%s", ICON_FA_TIMES, id.c_str()).c_str(),
             ImVec2(SCALE_IMGUI_SIZE(20.0f), SCALE_IMGUI_SIZE(20.0f))
@@ -1217,7 +1229,7 @@ void PaperboatInputEditorWindow::DrawRemoveGyroMappingButton(uint8_t port, std::
 
 void PaperboatInputEditorWindow::DrawAddGyroMappingButton(uint8_t port) {
     ImGui::SameLine();
-    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1.0f, 0.5f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(MAPPING_ICON_ALIGN, 0.5f));
     auto popupId = StringHelper::Sprintf("addGyroMappingPopup##%d", port);
     if (ImGui::Button(
             StringHelper::Sprintf("%s###addGyroMapping%d", ICON_FA_PLUS, port).c_str(),

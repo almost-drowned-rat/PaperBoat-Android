@@ -7,6 +7,14 @@
 #include "port/ui/cvar_prefixes.h"
 #include "port/ui/enhancementTypes.h"
 
+#ifdef __ANDROID__
+// The card menu's accent colours (MenuCards.cpp kAccents, same order); PaperBoat's own is Gold (2).
+static const std::unordered_map<int32_t, const char*> menuAccentOptions = {
+    { 0, "Tomato" }, { 1, "Orange" }, { 2, "Gold" },   { 3, "Green" }, { 4, "Teal" },
+    { 5, "Blue" },   { 6, "Violet" }, { 7, "Pink" },   { 8, "Gray" },
+};
+#endif
+
 namespace PaperboatGui {
 class PaperboatMenu : public Ship::Menu {
   public:

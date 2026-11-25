@@ -685,6 +685,10 @@ void Menu::DrawElement() {
     for (auto& [reason, info] : disabledMap) {
         info.active = info.evaluation(info);
     }
+#ifdef __ANDROID__
+    DrawCardMenu();
+    return;
+#endif
     const char* headerCvar = CVAR_SETTING("Menu.ActiveHeader");
 
     if (navigateToWidget) {

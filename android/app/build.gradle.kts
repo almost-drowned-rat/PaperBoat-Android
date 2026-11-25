@@ -149,8 +149,8 @@ android {
         applicationId = "io.github.almostdrownedrat.paperboat"
         minSdk = 24
         targetSdk = 36
-        versionCode = 5
-        versionName = "0.1.3"   // this port's own release number (the game version is projectVersion)
+        versionCode = 6
+        versionName = "0.2.0"   // this port's own release number (the game version is projectVersion)
 
         ndk {
             // 64-bit only; a second ABI roughly doubles an already long

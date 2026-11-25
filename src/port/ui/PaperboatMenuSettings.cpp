@@ -73,6 +73,7 @@ void PaperboatMenu::AddMenuSettings() {
 
     // Settings > General
     AddWidget(path, "Menu Settings", WIDGET_SEPARATOR_TEXT);
+#ifndef __ANDROID__ // Android: the card menu has the game's own accent colour, no theme choice
     AddWidget(path, "Menu Theme", WIDGET_CVAR_COMBOBOX)
         .CVar(CVAR_SETTING("Menu.Theme"))
         .RaceDisable(false)
@@ -82,7 +83,9 @@ void PaperboatMenu::AddMenuSettings() {
                 .ComboMap(menuThemeOptions)
                 .DefaultIndex(Colors::LightBlue)
         );
+#endif
 #if not defined(__SWITCH__) and not defined(__WIIU__)
+#ifndef __ANDROID__ // always on while the menu is open on Android
     AddWidget(path, "Menu Controller Navigation", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_IMGUI_CONTROLLER_NAV)
         .RaceDisable(false)
@@ -95,6 +98,8 @@ void PaperboatMenu::AddMenuSettings() {
                 "items, A to select, B to move up in scope."
             )
         );
+#endif
+#ifndef __ANDROID__ // the card menu has its own background
     AddWidget(path, "Menu Background Opacity", WIDGET_CVAR_SLIDER_FLOAT)
         .CVar(CVAR_SETTING("Menu.BackgroundOpacity"))
         .RaceDisable(false)
@@ -103,8 +108,12 @@ void PaperboatMenu::AddMenuSettings() {
                 "Sets the opacity of the background of the port menu."
             )
         );
+#endif
 
+#ifndef __ANDROID__ // its entries have no function on Android
     AddWidget(path, "General Settings", WIDGET_SEPARATOR_TEXT);
+#endif
+#ifndef __ANDROID__ // no mouse cursor on Android
     AddWidget(path, "Cursor Always Visible", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_SETTING("CursorVisibility"))
         .RaceDisable(false)
@@ -115,6 +124,8 @@ void PaperboatMenu::AddMenuSettings() {
         })
         .Options(CheckboxOptions().Tooltip("Makes the cursor always visible, even in full screen."));
 #endif
+#endif
+#ifndef __ANDROID__ // the card menu has no search
     AddWidget(path, "Search In Sidebar", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_SETTING("Menu.SidebarSearch"))
         .RaceDisable(false)
@@ -131,6 +142,8 @@ void PaperboatMenu::AddMenuSettings() {
                 "in the header."
             )
         );
+#endif
+#ifndef __ANDROID__ // the card menu has no search
     AddWidget(path, "Search Input Autofocus", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_SETTING("Menu.SearchAutofocus"))
         .RaceDisable(false)
@@ -140,6 +153,8 @@ void PaperboatMenu::AddMenuSettings() {
                 "other widgets."
             )
         );
+#endif
+#ifndef __ANDROID__ // no file browser to open on Android
     AddWidget(path, "Open App Files Folder", WIDGET_BUTTON)
         .RaceDisable(false)
         .Callback([](WidgetInfo& info) {
@@ -147,7 +162,11 @@ void PaperboatMenu::AddMenuSettings() {
             SDL_OpenURL(std::string("file:///" + std::filesystem::absolute(filesPath).string()).c_str());
         })
         .Options(ButtonOptions().Tooltip("Opens the folder that contains the save and mods folders, etc."));
+#endif
+#ifndef __ANDROID__ // its entry has no function on Android
     AddWidget(path, "EXPERIMENTAL", WIDGET_SEPARATOR_TEXT).Options(TextOptions().Color(Colors::Orange));
+#endif
+#ifndef __ANDROID__ // the card menu scales itself
     AddWidget(path, "ImGui Menu Scaling", WIDGET_CVAR_COMBOBOX)
         .CVar(CVAR_SETTING("ImGuiScale"))
         .RaceDisable(false)
@@ -160,6 +179,7 @@ void PaperboatMenu::AddMenuSettings() {
                 .LabelPosition(LabelPositions::Far)
         )
         .Callback([](WidgetInfo& info) { GameEngine::Instance->ScaleImGui(); });
+#endif
 
     path.column = SECTION_COLUMN_2;
     AddWidget(path, "Save Conversion", WIDGET_SEPARATOR_TEXT);
@@ -249,7 +269,9 @@ void PaperboatMenu::AddMenuSettings() {
                 "Volume of sound effects."
             )
         );
+#ifndef __ANDROID__ // one audio API on Android (SDL)
     AddWidget(path, "Audio API (Needs reload)", WIDGET_AUDIO_BACKEND).RaceDisable(false);
+#endif
 
     // Settings > Controls
     path.sidebarName = "Controls";
@@ -427,7 +449,9 @@ void PaperboatMenu::AddMenuSettings() {
         .CVar(CVAR_SETTING("MatchRefreshRate"))
         .RaceDisable(false)
         .Options(CheckboxOptions().Tooltip("Matches interpolation value to the refresh rate of your display."));
+#ifndef __ANDROID__ // one renderer on Android (OpenGL ES)
     AddWidget(path, "Renderer API (Needs reload)", WIDGET_VIDEO_BACKEND).RaceDisable(false);
+#endif
     AddWidget(path, "Enable Vsync", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_VSYNC_ENABLED)
         .RaceDisable(false)
@@ -449,6 +473,7 @@ void PaperboatMenu::AddMenuSettings() {
         })
         .Options(CheckboxOptions().Tooltip("Enables Windowed Fullscreen Mode."));
 #endif
+#ifndef __ANDROID__ // no separate windows on Android
     AddWidget(path, "Allow multi-windows", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_ENABLE_MULTI_VIEWPORTS)
         .RaceDisable(false)
@@ -463,6 +488,7 @@ void PaperboatMenu::AddMenuSettings() {
                 )
                 .DefaultValue(true)
         );
+#endif
     AddWidget(path, "Texture Filter (Needs reload)", WIDGET_CVAR_COMBOBOX)
         .CVar(CVAR_TEXTURE_FILTER)
         .RaceDisable(false)

@@ -38,20 +38,34 @@ App ID `io.github.almostdrownedrat.paperboat` — it installs next to other Pape
   game as a controller. **Automatic** hides them while a controller is used and a touch brings them back; **Always**
   and **Off** are the other modes. The engine's own touch controls start off on Android.
 - **Back** (the back gesture, the system bar's back button or a handheld's own Back key) opens the menu over the
-  game, fully usable with the controller (D-pad / stick, **A** choose, **B** back, holding the D-pad keeps moving):
-  - **Back to the game**
-  - **Touch controls** — mode, move and resize, size, single buttons, opacity, stick sensitivity, reset
-  - **Settings** — the engine's menu (with its Mods tab)
-  - **Shaders** — RetroArch shaders (below)
-  - **FPS** — a small readout of the frame rate and frame time in the corner
-  - **Exit game**
+  game; Back again closes it.
 
-  With the engine's menu open, Back closes it. In the menu Back opens, **Y** sets the selected setting back to its
-  default.
+## Menu
+
+One menu for everything — the game's settings and the Android ones — laid out the same in all of these N64 Android
+ports: the sections in a column on the left, the settings as cards on the right, grouped under headings and marked
+in the game's colour (gold).
+
+- **Controller**: D-pad / stick move, **A** select (on a value **A** takes it, left / right change it, **A** or **B**
+  lets go), **B** one level back (from the section column it closes the menu), **Y** back to the default,
+  **L / R** the section. The hints are at the bottom right.
+- **Touch**: tap a card, swipe to scroll; on a value a tap on its left third steps back, on the rest forward.
+
+The sections:
+
+- **General** — Back to game, Exit game; the general settings and the notifications
+- **Gameplay** — Gameplay and Cheats
+- **Graphics** — the graphics settings, the enhancements' graphics options, the status bar, and the FPS readout
+- **Shaders** (below), **Audio**
+- **Controls** — the bindings, the input viewer and the touch buttons (mode, move and resize, size, single buttons,
+  opacity, stick sensitivity, reset)
+- **Dev Tools**, **Mods** (the engine's mod list and the app's mod files)
+
+Every setting of the engine's menu is in here; only options without a function on Android are hidden.
 
 ## Shaders
 
-Back > **Shaders** has everything in one place:
+The **Shaders** section has everything in one place:
 
 - **Shader** — On / Off (On takes the preset last used).
 - **Shader selection** — the folders and presets of the imported packs. None are shipped: **Import shader pack
